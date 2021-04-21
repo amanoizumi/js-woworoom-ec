@@ -4,8 +4,10 @@ const orderBody = document.querySelector('#orderBody');
 const discardAllBtn = document.querySelector('.discardAllBtn');
 const orderAlert = document.querySelector('.order-alert');
 const orderPageTable = document.querySelector('.orderPage-table');
-// 資料
+
+// 訂單暫存
 let ordersData = [];
+
 function showError(err) {
   if(err.response.status === 400) {
     Swal.fire({
@@ -51,7 +53,7 @@ function renderC3() {
       item.products.forEach(product => {
         let obj = {
           productName: '',
-          productNum: 0
+          productNum: 0,
         };
         obj.productName = product.title;
         obj.productNum = product.quantity;
@@ -94,14 +96,14 @@ function renderC3() {
     others.forEach(item => {
       othersNum += item[1]
     })
-    columns.push(['其他', othersNum])
+    columns.push(['其他', othersNum]);
 
     let colorsArr = ['#301E5F','#5434A7', '#9D7FEA', '#DACBFF'];
     let colorsObj = {};
     // 製作出圖表，賣最多的品項顏色最深，「其他」是雜項的集合所以顏色最淺
     columns.forEach((item, index) => {
       if(colorsObj[item[0]] === undefined) {
-        colorsObj[item[0]] = colorsArr[index]
+        colorsObj[item[0]] = colorsArr[index];
       }
     })
 
@@ -122,6 +124,11 @@ function getOrderList() {
   const url = `${apiPath}/admin/${myPath}/orders`;
   axios.get(url, config).then((res) => {
     ordersData = res.data.orders;
+    // 訂購日期越早的訂單(優先處理)排越上面
+    ordersData.sort((a,b) => {
+      return a.createdAt - b.createdAt;
+    })
+    console.log(ordersData);
     renderOrder();
   }).catch((err) => {
     showError(err);
