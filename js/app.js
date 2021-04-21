@@ -45,6 +45,12 @@ function showError(err) {
     })
   }
 }
+function toCurrency(num){
+  var parts = num.toString().split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return parts.join('.');
+}
+
 // 取得產品列表(前台)
 function getProducts() {
   const url = `${apiPath}/customer/${myPath}/products`;
@@ -63,14 +69,16 @@ function renderProducts(data) {
   // 渲染產品卡片
   let cardStr = ``;
     data.forEach((item) => {
+    let origin_price = toCurrency(item.origin_price);
+    let price = toCurrency(item.price);
     cardStr += `
     <li class="productCard">
       <h4 class="productType">新品</h4>
       <img src="${item.images}" alt="">
       <a href="" class="js-addCart" data-productId=${item.id}>加入購物車</a>
       <h3>${item.title}</h3>
-      <del class="originPrice">NT$${item.origin_price}</del>
-      <p class="nowPrice">NT$${item.price}</p>
+      <del class="originPrice">NT$${origin_price}</del>
+      <p class="nowPrice">NT$${price}</p>
     </li>`;
   });
   productsWrap.innerHTML = cardStr;
@@ -133,6 +141,13 @@ function renderCart() {
     shoppingCartTable.classList.remove("d-none");
 
     carts.forEach((item) => {
+      console.log(item.product.price);
+
+      let productTotal = item.product.price * item.quantity;
+      let price = item.product.price;
+      productTotal = toCurrency(productTotal);
+      price = toCurrency(price);
+      
       str += `
       <tr>
       <td>
@@ -141,7 +156,7 @@ function renderCart() {
           <p>${item.product.title}</p>
       </div>
       </td>
-      <td>NT$${item.product.price}</td>
+      <td>NT$${price}</td>
       <td>
       <div class="d-flex align-items-center">
       <span class="material-icons cart-icon" data-js="minus" data-cartid="${item.id}">remove</span>
@@ -149,7 +164,7 @@ function renderCart() {
       <span class="material-icons cart-icon" data-js="plus" data-cartid="${item.id}">add</span>
       </div>
       </td>
-      <td>NT$${item.product.price * item.quantity}</td>
+      <td>NT$${productTotal}</td>
       <td class="discardBtn">
           <a href="#" class="material-icons" data-js="delete" data-cartid="${item.id}">
               clear
@@ -159,8 +174,9 @@ function renderCart() {
     });
     
     shoppingCart.innerHTML = str;
-    let totalCostStr = `NT$${cartTotalData.finalTotal}`;
-    totalCost.innerHTML = totalCostStr;
+    let finalTotal = cartTotalData.finalTotal;
+    finalTotal = toCurrency(finalTotal);
+    totalCost.innerHTML = `NT$${finalTotal}`;
   }
 
 }
