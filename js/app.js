@@ -22,31 +22,48 @@ let filterTempArr = [];
 let cartTotalData = {};
 
 
-
 // 前台
 function showError(err) {
-  if(err.response.status === 400) {
+  if(err.response.status === 400 || err.response.status === 403 || err.response.status === 404){
     Swal.fire({
-      title:  `${err.response.data.message}`,
-      icon: 'error',
-      confirmButtonText: '確定',
-    })
-  } else if (err.response.status === 403) {
-    Swal.fire({
-      title:  `${err.response.data.message}`,
-      icon: 'error',
-      confirmButtonText: '確定',
-    })
-  } else if (err.response.status === 404) {
-    Swal.fire({
-      title:  `${err.response.data.message}`,
-      icon: 'error',
-      confirmButtonText: '確定',
-    })
-  }
+        title:  `${err.response.data.message}`,
+        icon: 'error',
+        confirmButtonText: '確定',
+      })
+    }
+  // 修正前
+  // if(err.response.status === 400) {
+  //   Swal.fire({
+  //     title:  `${err.response.data.message}`,
+  //     icon: 'error',
+  //     confirmButtonText: '確定',
+  //   })
+  // } else if (err.response.status === 403) {
+  //   Swal.fire({
+  //     title:  `${err.response.data.message}`,
+  //     icon: 'error',
+  //     confirmButtonText: '確定',
+  //   })
+  // } else if (err.response.status === 404) {
+  //   Swal.fire({
+  //     title:  `${err.response.data.message}`,
+  //     icon: 'error',
+  //     confirmButtonText: '確定',
+  //   })
+  // }
 }
+
+function showSuccess(mes){
+  Swal.fire({
+    icon: 'success',
+    showConfirmButton: false,
+    timer: 1500,
+    title: mes,
+  })
+}
+
 function toCurrency(num){
-  var parts = num.toString().split('.');
+  let parts = num.toString().split('.');
   parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   return parts.join('.');
 }
@@ -62,14 +79,14 @@ function getProducts() {
   }).catch((err) => {
     showError(err);
   })
-
 }
+
 // 渲染產品列表
 function renderProducts(data) {
   // 渲染產品卡片
   let cardStr = ``;
     data.forEach((item) => {
-    let origin_price = toCurrency(item.origin_price);
+    let originPrice = toCurrency(item.origin_price);
     let price = toCurrency(item.price);
     cardStr += `
     <li class="productCard">
@@ -77,7 +94,7 @@ function renderProducts(data) {
       <img src="${item.images}" alt="">
       <a href="" class="js-addCart" data-productId=${item.id}>加入購物車</a>
       <h3>${item.title}</h3>
-      <del class="originPrice">NT$${origin_price}</del>
+      <del class="originPrice">NT$${originPrice}</del>
       <p class="nowPrice">NT$${price}</p>
     </li>`;
   });
@@ -126,8 +143,8 @@ function getCartList() {
   }).catch((err) => {
     showError(err);
   })
-  
 }
+
 // 渲染購物車內容
 function renderCart() {
   let carts = cartTotalData.carts;
@@ -135,19 +152,16 @@ function renderCart() {
   if(carts.length === 0) {
     cartAlert.innerHTML = '購物車還沒有東西喔，來去逛逛吧 ～ ';
     shoppingCartTable.classList.add("d-none");
-
   } else {
     cartAlert.innerHTML = '';
     shoppingCartTable.classList.remove("d-none");
 
     carts.forEach((item) => {
-      console.log(item.product.price);
-
       let productTotal = item.product.price * item.quantity;
       let price = item.product.price;
       productTotal = toCurrency(productTotal);
       price = toCurrency(price);
-      
+
       str += `
       <tr>
       <td>
@@ -178,21 +192,19 @@ function renderCart() {
     finalTotal = toCurrency(finalTotal);
     totalCost.innerHTML = `NT$${finalTotal}`;
   }
-
 }
 // 加入購物車
 function addCartItem(e) {
   e.preventDefault();
-  let addCartClass = e.target.getAttribute('class');
+  const addCartClass = e.target.getAttribute('class');
   if(addCartClass !== 'js-addCart') {
     return;
   }
-  let productId = e.target.getAttribute('data-productId');
+  const productId = e.target.getAttribute('data-productId');
   const url = `${apiPath}/customer/${myPath}/carts`;
   
   // 檢查點擊的商品是否已在購物車內
   let isProductExist = false;
-
   cartTotalData.carts.forEach((item) => {
     if (item.product.id === productId) {
       isProductExist = true;
@@ -212,37 +224,24 @@ function addCartItem(e) {
         axios.post(url, obj).then((res) => {
         cartTotalData = res.data;
         renderCart();
-        Swal.fire({
-          icon: 'success',
-          showConfirmButton: false,
-          timer: 1500,
-          title: '購物車產品已增加數量！',
-        })
+        showSuccess('購物車產品已增加數量！');
       }).catch((err) => {
         showError(err);
       })
       }
     })
-  }
-
- // 如果不存在，則加入該商品並且數量預設為 1
-  if(!isProductExist) {
+  // 如果商品不存在，則
+  } else {
     let obj = {
       data: {
         productId: productId,
         quantity: 1,
       }
     };
-  
     axios.post(url, obj).then((res) => {
       cartTotalData = res.data;
       renderCart();
-      Swal.fire({
-        icon: 'success',
-        showConfirmButton: false,
-        timer: 1500,
-        title: '商品已加到購物車！',
-      })
+      showSuccess('商品已加到購物車！');
     }).catch((err) => {
       showError(err);
     })
@@ -252,8 +251,7 @@ function addCartItem(e) {
 // 監聽購物車行為
 function doSomething(e) {
   e.preventDefault();
-  let doSomething = e.target.getAttribute('data-js');
-
+  const doSomething = e.target.getAttribute('data-js');
   if (doSomething !== 'minus' && doSomething !== 'plus' && doSomething !== 'delete') {
     return;
   } else {
@@ -267,6 +265,7 @@ function doSomething(e) {
     }
   }
 }
+
 // PATCH 編輯購物車數量
 function editCartItem(para, id) {
   let obj = {};
@@ -282,28 +281,6 @@ function editCartItem(para, id) {
         }
       }
     }))
-
-    axios.patch(url, obj).then(res => {
-      cartTotalData = res.data;
-      renderCart();
-    })
-  }
-  else if (para === 'minus'){
-    cartTotalData.carts.forEach((item => {
-      if(item.id === id) {
-        if(item.quantity === 1) {
-
-        }
-        obj = {
-          data: {
-            id: id,
-            quantity: item.quantity - 1
-          }
-        }
-      }
-
-    }))
-
     axios.patch(url, obj).then(res => {
       cartTotalData = res.data;
       renderCart();
@@ -311,7 +288,32 @@ function editCartItem(para, id) {
       showError(err);
     })
   }
-
+  else if (para === 'minus') {
+    cartTotalData.carts.forEach((item => {
+      if(item.id === id && item.quantity > 1) {
+        obj = {
+          data: {
+            id: id,
+            quantity: item.quantity - 1
+          }
+        }
+        axios.patch(url, obj).then(res => {
+          cartTotalData = res.data;
+          renderCart();
+        }).catch(err => {
+          showError(err);
+        })
+      }
+      else if (item.id === id && item.quantity <= 1) {
+        Swal.fire({
+          icon: 'warning',
+          showConfirmButton: false,
+          timer: 1500,
+          title: '商品數量不得少於一個！',
+        })
+      }
+    }))
+  }
 }
 
 // 清除購物車內全部產品
@@ -329,12 +331,7 @@ function deleteCartAll(e) {
       axios.delete(url).then((res) => {
         cartTotalData = res.data;
         renderCart();
-        Swal.fire({
-          showConfirmButton: false,
-          timer: 1500,
-          title: '已清空購物車！',
-          icon: 'success',
-        })
+        showSuccess('已清空購物車！');
       }).catch((err) => {
         showError(err);
       })
@@ -349,17 +346,11 @@ function deleteCartItem(id) {
   axios.delete(url).then((res) => {
     cartTotalData = res.data;
     renderCart();
-    Swal.fire({
-      showConfirmButton: false,
-      timer: 1500,
-      title: '成功刪除該商品！',
-      icon: 'success',
-    })
+    showSuccess('成功刪除該商品！');
   }).catch((err) => {
     showError(err);
   })
 }
-
 
 // 監聽產品列表
 productsWrap.addEventListener('click', addCartItem);
@@ -370,16 +361,17 @@ shoppingCart.addEventListener('click', doSomething);
 // 監聽購物車清除全部
 discardAllBtn.addEventListener('click', deleteCartAll);
 
-
 // 表單
 const constraints = {
   "姓名": {
     presence: {
+      allowEmpty: false,
       message: "必填"
     }
   },
   "電話": {
     presence: {
+      allowEmpty: false,
       message: "必填"
     },
     length: {
@@ -389,6 +381,7 @@ const constraints = {
   },
   "Email": {
     presence: {
+      allowEmpty: false,
       message: "必填"
     },
     email: {
@@ -397,11 +390,11 @@ const constraints = {
   },
   "寄送地址": {
     presence: {
+      allowEmpty: false,
       message: "必填"
     }
   },
 };
-
 
 createOrderBtn.addEventListener('click', bindCheck);
 
@@ -420,17 +413,33 @@ function bindCheck() {
       dataArr.push(item.value);
       item.nextElementSibling.textContent = '';
     });
+
     let errors = validate(form, constraints) || '';
     if (errors) {
       let keysArr = Object.keys(errors);
-      keysArr.forEach(function (item) {
+      keysArr.forEach((item) => {
         document.querySelector(`[data-message="${item}"]`).textContent = errors[item];
       })
+      checkFormAgain();
     }  else if (errors === '') {
       dataArr.push(tradeWay.value);
       createOrder(dataArr);
     }
   }
+}
+// 第一次送出表單失敗後，綁上 change 的函式
+function checkFormAgain() {
+  inputs.forEach((item) => {
+    item.addEventListener("change", () => {
+      item.nextElementSibling.textContent = '';
+      let errors = validate(form, constraints) || '';
+      if (errors) {
+        Object.keys(errors).forEach((keys) => {
+          document.querySelector(`[data-message="${keys}"]`).textContent = errors[keys];
+        })
+      }
+    });
+  });
 }
 
 // 送出購買訂單
@@ -468,6 +477,7 @@ function createOrder(dataArr) {
   </tr>
   </table>
   `;
+
   Swal.fire({
         title: '確定送出訂單嗎？',
         icon: 'info',
@@ -479,7 +489,6 @@ function createOrder(dataArr) {
       }).then((result) => {
         if(result.isConfirmed) {
           const url = `${apiPath}/customer/${myPath}/orders`;
-        
           const obj = {
             data: {
               user: {
@@ -490,18 +499,12 @@ function createOrder(dataArr) {
           axios.post(url, obj).then((res) => {
             // 刷新購物車
             getCartList();
-            Swal.fire({
-              title: '成功送出訂單！',
-              showConfirmButton: false,
-              icon: 'success',
-              timer: 1500,
-            })
+            showSuccess('成功送出訂單！');
             form.reset();
           }).catch((err) => {
             showError(err);
           })
         }
-        
       })
 }
 // 初始化

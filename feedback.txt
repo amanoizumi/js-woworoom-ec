@@ -1,0 +1,82 @@
+
+√ 1. showError(err) 函式可以改為判斷是否有這三個 status 就可以了，例如：
+
+if(err.response.status === 400 || err.response.status === 403 || err.response.status === 404){
+ Swal.fire({ ... })
+}
+
+√ 2. 沒有被重新賦值的變數請用 const 來取代 let，例如：透過 e.target 選取到的值
+
+前台：
+
+√ 1. toCurrency(num) 函式內的變數可以改用 let 或 const 來宣告，讓變數的宣告較有一致性
+
+√ 2. origin_price 可以改為小駝峰命名：originPrice，讓變數名稱比較有一致性
+
+√ 3. 第 203 - 249 行可以改為 if、else if 的結構，
+這樣日後檢視程式碼會比較清楚這兩個判斷條件為同一組，
+都用來判斷商品是否有在購物車裡
+
+√ 4. 增加購物車數量的 axios 也可以加上 .catch() 方便除錯。
+修改後，這段程式碼可以移到 if、else if 外面，
+這樣就不用重複寫兩次了：
+
+axios.patch(url, obj).then(res => {
+ cartTotalData = res.data;
+ renderCart();
+})
+.catch(err => { showError(err); })
+
+√ 5. 如果商品數量等於 1，點選減號時就不需要執行 patch，跳出警告後就可以加上 return 來中止函式
+
+√ 6. constraints 裡面的驗證內容，可以再增加 allowEmpty: false，避免使用者輸入空白的內容。使用範例如下：
+
+"姓名": {
+ presence: {
+  allowEmpty: false,
+  message: "必填欄位"
+ },
+},
+
+√ 7. 如果訂單沒有通過驗證，可以再增加 input change 的事件，讓使用者重新填寫後可以直接進行驗證，
+立即獲得回饋。不用等到點擊「送出預訂資料」按鈕後才知道自己是否有填寫正確
+
+√ 8. 有看到同學在使用者操作成功時會跳出視窗來告知，很棒哦。
+這邊建議也可以將操作成功的 swal 視窗包裝成函式來執行，讓程式更加精簡。例如：
+
+function showSuccess(mes){
+ Swal.fire({
+  icon: 'success',
+  showConfirmButton: false,
+  timer: 1500,
+  title: mes,
+ })
+}
+在 axios 使用時：
+
+axios.post(url, obj).then((res) => {
+ cartTotalData = res.data;
+ renderCart();
+ showSuccess('商品已加到購物車！')
+})
+
+
+後台：
+
+1. 商品營收為商品價格 * 數量，圖表的資訊記得修改～
+
+2. 如果商品數量沒有超過三項，圓餅圖就不需要有「其他」的選項
+
+3. 訂單順序的處理建議改為放到 renderOrder() 裡。目前如果操作訂單處理或是刪除訂單後，訂單就不會按照訂購日期排序了
+
+4. 刪除全部訂單的函式，如果已經沒有訂單就不用再執行 delete，可以增加判斷，如果沒有訂單則中止函式、不送出請求
+
+5. 第 300 行的 === true 可以不用寫
+
+
+
+以上建議可以試著調整看看，如果有疑問歡迎提出，我們都會在線上為你解答 :D
+
+
+
+整體練習得很好，恭喜通過最終關卡！

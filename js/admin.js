@@ -9,25 +9,13 @@ const orderPageTable = document.querySelector('.orderPage-table');
 let ordersData = [];
 
 function showError(err) {
-  if(err.response.status === 400) {
+  if(err.response.status === 400 || err.response.status === 403 || err.response.status === 404){
     Swal.fire({
-      title:  `${err.response.data.message}`,
-      icon: 'error',
-      confirmButtonText: '確定',
-    })
-  } else if (err.response.status === 403) {
-    Swal.fire({
-      title:  `${err.response.data.message}`,
-      icon: 'error',
-      confirmButtonText: '確定',
-    })
-  } else if (err.response.status === 404) {
-    Swal.fire({
-      title:  `${err.response.data.message}`,
-      icon: 'error',
-      confirmButtonText: '確定',
-    })
-  }
+        title:  `${err.response.data.message}`,
+        icon: 'error',
+        confirmButtonText: '確定',
+      })
+    }
 }
 
 // C3 圖表
@@ -206,9 +194,9 @@ function renderOrder() {
 function doSomething(e) {
   e.preventDefault();
 
-  let targetClass = e.target.getAttribute('class');
-  let orderId = e.target.getAttribute('data-id');
-  let orderState = e.target.getAttribute('data-state');
+  const targetClass = e.target.getAttribute('class');
+  const orderId = e.target.getAttribute('data-id');
+  const orderState = e.target.getAttribute('data-state');
 
   if(targetClass !== 'orderStatus-Btn' && targetClass !== 'delSingleOrder-Btn') {
     return;
