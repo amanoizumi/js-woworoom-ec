@@ -41,10 +41,10 @@ function renderC3() {
       item.products.forEach(product => {
         let obj = {
           productName: '',
-          productNum: 0,
+          productIncome: 0,
         };
         obj.productName = product.title;
-        obj.productNum = product.quantity;
+        obj.productIncome = product.quantity * product.price;
         arr.push(obj);
       })
     })
@@ -53,38 +53,42 @@ function renderC3() {
     arr.forEach(item=>{
       let name = item.productName;
       if(obj[name] === undefined) {
-        obj[name] = item.productNum;
+        obj[name] = item.productIncome;
       } else {
-        obj[name] += item.productNum;
+        obj[name] += item.productIncome;
       }
     })
-  
+
     let columns = [];
   
     let keys = Object.keys(obj);
     let values = Object.values(obj);
-  
-    keys.forEach((item, index)=>{
+    
+    for(let i = 0; i < keys.length; i++) {
       let arr = [];
-      arr.push(keys[index]);
-      arr.push(values[index]);
+      arr.push(keys[i]);
+      arr.push(values[i]);
       columns.push(arr);
-    })
+    }
+
     // 依照賣出數量由大到小排序
     columns.sort((a,b) => {
       return b[1] - a[1];
     });
-  
+    
     // 切出前三名銷售量最高的品項
     let others = [];
     others = columns.splice(3);
     
-    // 算出其他產品的數量
-    let othersNum = 0;
+    // 算出其他產品的總價格
+    let othersPrice = 0;
     others.forEach(item => {
-      othersNum += item[1]
+      othersPrice += item[1]
     })
-    columns.push(['其他', othersNum]);
+
+    if(others.length > 0) {
+      columns.push(['其他', othersPrice]);
+    }
 
     let colorsArr = ['#301E5F','#5434A7', '#9D7FEA', '#DACBFF'];
     let colorsObj = {};
@@ -112,11 +116,6 @@ function getOrderList() {
   const url = `${apiPath}/admin/${myPath}/orders`;
   axios.get(url, config).then((res) => {
     ordersData = res.data.orders;
-    // 訂購日期越早的訂單(優先處理)排越上面
-    ordersData.sort((a,b) => {
-      return a.createdAt - b.createdAt;
-    })
-    console.log(ordersData);
     renderOrder();
   }).catch((err) => {
     showError(err);
@@ -144,7 +143,7 @@ function calcOrderDay (num) {
   return str;
 }
 
-// 渲染訂單列表
+// 渲染訂單列表 + 排序
 function renderOrder() {
   if(ordersData.length === 0) {
     orderAlert.innerHTML = '目前沒有任何訂單！';
@@ -152,6 +151,11 @@ function renderOrder() {
   } else if (ordersData.length !== 0){
     orderAlert.innerHTML = '';
     orderPageTable.classList.remove("d-none");
+
+    // 訂購日期越早的訂單(優先處理)排越上面
+    ordersData.sort((a,b) => {
+      return a.createdAt - b.createdAt;
+    })
 
     let str = ``;
     ordersData.forEach((item) => {
@@ -274,32 +278,39 @@ function deleteOrderItem(orderId) {
 // DELETE 刪除全部訂單
 function deleteAllOrder(e) {
   e.preventDefault();
-  Swal.fire({
-    confirmButtonText: `確定`,
-    title: '確定要刪除所有訂單嗎？',
-    showCancelButton: true,
-    cancelButtonText: '取消',
-    icon: 'warning',
-    confirmButtonColor: '#6A33F8',
-  }).then((result) => {
-    if (result.isConfirmed) {
-      const url = `${apiPath}/admin/${myPath}/orders`;
-      axios.delete(url, config).then((res) => {
-        if(res.data.status === true) { 
-          Swal.fire({
-            title:  `${res.data.message}`,
-            icon: 'success',
-            showConfirmButton: false,
-            timer: 1500,
-          })
-          ordersData = res.data.orders;
-          renderOrder();
-        }
-      }).catch((err) => {
-        showError(err);
-      })
-    }
-  })
+  if(ordersData.length === 0) {
+    Swal.fire({
+      title: '目前沒有訂單！',
+      icon: 'warning',
+    })
+  } else {
+    Swal.fire({
+      confirmButtonText: `確定`,
+      title: '確定要刪除所有訂單嗎？',
+      showCancelButton: true,
+      cancelButtonText: '取消',
+      icon: 'warning',
+      confirmButtonColor: '#6A33F8',
+    }).then((result) => {
+      if (result.isConfirmed) {
+        const url = `${apiPath}/admin/${myPath}/orders`;
+        axios.delete(url, config).then((res) => {
+          if(res.data.status) { 
+            Swal.fire({
+              title:  `${res.data.message}`,
+              icon: 'success',
+              showConfirmButton: false,
+              timer: 1500,
+            })
+            ordersData = res.data.orders;
+            renderOrder();
+          }
+        }).catch((err) => {
+          showError(err);
+        })
+      }
+    })
+  }
 }
 
 // 監聽

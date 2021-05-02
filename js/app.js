@@ -416,8 +416,7 @@ function bindCheck() {
 
     let errors = validate(form, constraints) || '';
     if (errors) {
-      let keysArr = Object.keys(errors);
-      keysArr.forEach((item) => {
+      Object.keys(errors).forEach((item) => {
         document.querySelector(`[data-message="${item}"]`).textContent = errors[item];
       })
       checkFormAgain();
